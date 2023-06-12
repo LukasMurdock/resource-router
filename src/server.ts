@@ -216,6 +216,8 @@ export type Route<
 
 export type RouteType = 'collection' | 'item'
 
+export type AnyApi = ReturnType<typeof defineResourceRouter>['apiConfig']
+
 export type AnyRoute = Route<
   any,
   any,
@@ -428,7 +430,8 @@ export function defineResourceRouter<
           ? routeMethodObject.validateHeaders(apiReq.headers)
           : undefined
       const validatedBody =
-        'validateBody' in routeMethodObject
+        'validateBody' in routeMethodObject &&
+        typeof routeMethodObject.validateBody === 'function'
           ? routeMethodObject.validateBody(apiReq.body)
           : undefined
 

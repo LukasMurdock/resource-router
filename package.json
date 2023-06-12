@@ -1,0 +1,6 @@
+{
+  "name": "ts-resource-router",
+  "version": "1.0.0",
+  "description": "A simple typed resource router.",
+  "main": "src/index.js"
+}
