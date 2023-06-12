@@ -448,33 +448,11 @@ export function defineResourceRouter<
   return { apiConfig, handler }
 }
 
-export type GetApiResource<
+type GetApiResources<
   Api extends {
     apiConfig: {
-      baseURI: string
-      errorHandler: (error: any) => ApiHandlerResponse
-      convertRuntimeToRequest: (req: unknown) => Request
-      convertHandlerToRuntime: (res: ApiHandlerResponse) => ApiHandlerResponse
       resources: AnyRoute[]
     }
   },
   TKey extends Api['apiConfig']['resources'][number]['key'],
 > = Extract<Api['apiConfig']['resources'][number], { key: TKey }>
-
-export type ApiTypeHelper<
-  Api extends {
-    apiConfig: {
-      baseURI: string
-      errorHandler: (error: any) => ApiHandlerResponse
-      convertRuntimeToRequest: (req: unknown) => Request
-      convertHandlerToRuntime: (res: ApiHandlerResponse) => ApiHandlerResponse
-      resources: AnyRoute[]
-    }
-  },
-  TRoute extends Api['apiConfig']['resources'] = Api['apiConfig']['resources'],
-  TKey extends TRoute[number]['key'] = TRoute[number]['key'],
-> = {
-  routeType: RouteType
-  key: TKey
-  route: TRoute[number]
-}
