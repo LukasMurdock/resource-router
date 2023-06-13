@@ -18,25 +18,13 @@
 
 ### Convention implications
 
-- able to wrap `fetch()` with type annotations from api route object types
+- able to wrap `fetch()` with type annotations from api route object types to create a `resourceClient`
 - No nested resources
 - Bad optional search parameter type handling
 
 ## Example
 
 ```typescript
-type ApiHandlerResponse = {
-  /**
-   * HTTP status code.
-   */
-  status: number
-  headers?: Record<string, string>
-  /**
-   * JSON serializable body.
-   */
-  body?: any
-}
-
 // file: /resources/user.ts
 const user = defineResource({
   key: 'users',
@@ -50,25 +38,12 @@ const user = defineResource({
           }
         },
         validateHeaders: (headers) => headers,
-        // GET requests do not have body
-        // validateBody: (body) => {
-        // 	return {
-        // 		name: "John Doe",
-        // 	};
-        // },
         handler: async ({ search, headers }) => {
           // search.limit === 'number'
           // headers === any
-          return {
-            status: 200,
-            body: {
-              users: [
-                {
-                  name: 'John',
-                },
-              ],
-            },
-          }
+          return json({
+            users: [],
+          })
         },
       },
       POST: {
@@ -87,16 +62,12 @@ const user = defineResource({
         },
         handler: async ({ search, headers, body }) => {
           // body.name === string
-          return {
-            status: 200,
-            body: {
-              users: [
-                {
-                  name: 'John Doe',
-                },
-              ],
+          return json({
+            user: {
+              id: '123',
+              name: 'John Doe',
             },
-          }
+          })
         },
       },
     },
@@ -109,12 +80,9 @@ const user = defineResource({
         validateHeaders: (headers) => headers,
         validateBody: (body) => body,
         handler: async ({ search }) => {
-          return {
-            status: 200,
-            body: {
-              user: {},
-            },
-          }
+          return json({
+            user: {},
+          })
         },
       },
     },
@@ -138,6 +106,11 @@ export const api = defineResourceRouter({
 })
 
 export type Api = typeof api
+
+// file: /client.ts
+export const resourceClient = createClient<ApiConfig>({
+  baseURI: 'https://api.example.com',
+})
 
 // file: /anywhere.ts
 const users = await resourceClient

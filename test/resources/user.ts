@@ -1,4 +1,4 @@
-import { defineResource } from '../../src/server'
+import { defineResource, json } from '../../src/server'
 
 export const user = defineResource({
   key: 'users',
@@ -38,12 +38,12 @@ export const user = defineResource({
           }
         },
         handler: async (req) => {
-          return {
-            status: 200,
-            body: {
-              users: [],
+          return json({
+            user: {
+              id: '123',
+              name: 'John Doe',
             },
-          }
+          })
         },
       },
     },
@@ -60,12 +60,9 @@ export const user = defineResource({
         validateHeaders: (headers) => headers,
         validateBody: (body) => body,
         handler: async ({ search }) => {
-          return {
-            status: 200,
-            body: {
-              user: {},
-            },
-          }
+          return json({
+            user: {},
+          })
         },
       },
       DELETE: {

@@ -16,6 +16,19 @@ export type ApiErrorResponse = {
 }
 
 /**
+ * A utility to return a successful `ApiHandlerResponse`.
+ */
+export function json(body: any) {
+  return {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  }
+}
+
+/**
  * The user will conform to this interface when defining their API.
  *
  * Status could be assumed to be 200. This interface was chosen to allow for
@@ -438,7 +451,7 @@ export function defineResourceRouter<
       const validatedBody =
         'validateBody' in routeMethodObject &&
         typeof routeMethodObject.validateBody === 'function'
-          ? routeMethodObject.validateBody(apiReq.body)
+          ? routeMethodObject.validateBody(apiReq.json())
           : undefined
 
       const handlerRes = (await routeMethodObject.handler({
