@@ -1,5 +1,8 @@
 import type { AnyApi, RouteType } from './server'
 
+type Distribute<T> = T extends any ? T : never
+type DistributedKeyOf<T> = T extends any ? keyof T : never
+
 export function createClient<Api extends AnyApi>(baseFetchConfig: {
   baseURI: Api['baseURI']
 }) {
@@ -12,26 +15,43 @@ export function createClient<Api extends AnyApi>(baseFetchConfig: {
    * - `methods` type
    */
   function fetch<
+    TSearch extends TResource[TSelector['type']]['methods'][SMethods] extends {
+      validateSearch: (any: any) => infer TSearch
+    }
+      ? TSearch
+      : never,
+    TSelector extends {
+      resource: SResourceKeys
+      type: SRouteTypes
+      method: SMethods
+      search?: TSearch
+    },
     SResourceKeys extends Api['resources'][number]['key'],
-    SRouteTypes extends RouteType,
-    SMethods extends keyof Extract<
+    TResource extends Extract<
       Api['resources'][number],
       {
-        key: TSelector['resource']
+        key: SResourceKeys
       }
-    >[TSelector['type']]['methods'],
+    >,
+    SMethods extends DistributedKeyOf<TResource[TSelector['type']]['methods']>,
+    SRouteTypes extends RouteType,
+
+    // SSearch extends Extract<
+    //   Api['resources'][number],
+    //   {
+    //     key: SResourceKeys
+    //   }
+    // >[TSelector['type']]['methods'][TSelector['method']],
+    // SMethods extends {
+    //   [K in keyof TResource['methods']]: K extends SRouteTypes ? K : never
+    // }[keyof TResource['methods']],
     // SMethod extends keyof Extract<
     //   Api['resources'][number],
     //   {
     //     key: TSelector['resource']
     //   }
     // >[TSelector['type']]['methods'],
-    TSelector extends {
-      resource: SResourceKeys
-      type: SRouteTypes
-      method: SMethods
-      //   search: SSearch
-    },
+
     //   SSearch extends Extract<
     //     Api['resources'][number],
     //     {
@@ -45,7 +65,16 @@ export function createClient<Api extends AnyApi>(baseFetchConfig: {
     // SMethod extends keyof TRouteObject["methods"],
     // TMethod extends DistributedKeyOf<TRouteObject["methods"]>,
     // TRouteMethodObject extends TRouteObject["methods"],
-  >(selector: TSelector): TSelector {
+  >(
+    selector: TSelector,
+  ): {
+    options: {
+      resources: SResourceKeys
+      methods: SMethods
+      search: TSearch
+    }
+    selector: TSelector
+  } {
     return {} as any
   }
 
