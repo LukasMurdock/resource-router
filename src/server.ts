@@ -1,6 +1,27 @@
+import { ResourceError } from './shared'
+
 export type SupportedHTTPMethod = 'GET' | 'POST' | 'PUT' | 'DELETE'
 
-type ApiHandlerResponse = {
+/**
+ * Any thrown `ResourceError` errors will be caught and converted this response.
+ */
+export type ApiErrorResponse = {
+  status: number
+  headers?: Record<string, string>
+  body: {
+    code: number
+    message: string
+    innererror?: any
+  }
+}
+
+/**
+ * The user will conform to this interface when defining their API.
+ *
+ * Status could be assumed to be 200. This interface was chosen to allow for
+ * setting response headers and body (and potentially other fields).
+ */
+export type ApiHandlerResponse = {
   /**
    * HTTP status code.
    */
@@ -10,21 +31,6 @@ type ApiHandlerResponse = {
    * JSON serializable body.
    */
   body?: any
-}
-
-class ResourceError extends Error {
-  /** the HTTP status code applicable to this problem. */
-  code: number
-  /** optional structured instance */
-  innererror: any
-
-  constructor(code: number, message: string, innererror?: any) {
-    super(message)
-    this.name = 'ValidationError'
-    this.code = code
-    this.message = message
-    this.innererror = innererror
-  }
 }
 
 //////////
@@ -82,31 +88,31 @@ export type Route<
   TCollectionPutSearch,
   TCollectionPutHeaders,
   TCollectionPutBody,
-  TCollectionPutResponse,
+  TCollectionPutResponse extends ApiHandlerResponse,
   // Collection delete
   TCollectionDeleteOperationId,
   TCollectionDeleteSearch,
   TCollectionDeleteHeaders,
   TCollectionDeleteBody,
-  TCollectionDeleteResponse,
+  TCollectionDeleteResponse extends ApiHandlerResponse,
   // Item get
   TItemGetOperationId,
   TItemGetSearch,
   TItemGetHeaders,
   TItemGetBody,
-  TItemGetResponse,
+  TItemGetResponse extends ApiHandlerResponse,
   // Item post
   TItemPostOperationId,
   TItemPostSearch,
   TItemPostHeaders,
   TItemPostBody,
-  TItemPostResponse,
+  TItemPostResponse extends ApiHandlerResponse,
   // Item put
   TItemPutOperationId,
   TItemPutSearch,
   TItemPutHeaders,
   TItemPutBody,
-  TItemPutResponse,
+  TItemPutResponse extends ApiHandlerResponse,
   // Item delete
   TItemDeleteOperationId,
   TItemDeleteSearch,
@@ -375,7 +381,7 @@ export function defineResourceRouter<
   Resources extends AnyRoute[],
 >(apiConfig: {
   baseURI: string
-  errorHandler: (error: any) => ApiHandlerResponse
+  errorHandler: (error: any) => ApiErrorResponse
   /**
    * Convert runtime request to Web Fetch Request (e.g., Express Request -> Web Fetch Request)
    */
@@ -385,7 +391,7 @@ export function defineResourceRouter<
 }): {
   apiConfig: {
     baseURI: string
-    errorHandler: (error: any) => ApiHandlerResponse
+    errorHandler: (error: any) => ApiErrorResponse
     convertRuntimeToRequest: (req: TRuntimeReq) => Request
     convertHandlerToRuntime: (res: ApiHandlerResponse) => TRuntimeRes
     resources: Resources
@@ -414,7 +420,7 @@ export function defineResourceRouter<
       const routeType = parsedURI.id ? 'item' : 'collection'
 
       const routeMethodObject =
-        // @ts-ignore because we expect it to sometimes be undefined
+        // @ts-ignore because we expect the api method to not match the route methods
         resourceObject[routeType]['methods'][apiReq.method] as AnyMethod
 
       if (!routeMethodObject) {
@@ -459,3 +465,36 @@ type GetApiResources<
   },
   TKey extends Api['apiConfig']['resources'][number]['key'],
 > = Extract<Api['apiConfig']['resources'][number], { key: TKey }>
+
+export type DistributedKeyOf<T> = T extends any ? keyof T : never
+
+// GetApiResponse<Api, 'user', 'collection', 'get'>
+export type GetApiResponse<
+  Api extends AnyApi,
+  TResourceKey extends DistributedKeyOf<Api['resources']>,
+  TRouteType extends RouteType,
+  TMethod extends keyof Extract<
+    Api['resources'][number],
+    { key: TResourceKey }
+  >[TRouteType]['methods'],
+> = ConvertHandlerToResponse<
+  Extract<
+    Api['resources'][number],
+    { key: TResourceKey }
+  >[TRouteType]['methods'][TMethod] extends {
+    handler: (any: any) => infer TResponse
+  }
+    ? TResponse extends Promise<ApiHandlerResponse>
+      ? ConvertHandlerToResponse<Awaited<TResponse>>
+      : never
+    : never
+>
+
+export type ConvertHandlerToResponse<THandlerRes extends ApiHandlerResponse> =
+  THandlerRes extends {
+    status: number
+    headers?: Record<string, string>
+    body?: infer TBody
+  }
+    ? TBody
+    : never

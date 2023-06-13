@@ -29,11 +29,7 @@ export const user = defineResource({
       },
       POST: {
         operationId: 'createUser',
-        validateSearch: (search) => {
-          return {
-            limit: 10,
-          }
-        },
+        validateSearch: (search) => search,
         validateHeaders: (headers) => headers,
         // Check validateBody throws type error in GET
         validateBody: (body) => {
@@ -56,6 +52,24 @@ export const user = defineResource({
     methods: {
       GET: {
         operationId: 'getUser',
+        validateSearch: (search) => {
+          return {
+            limit: 10,
+          }
+        },
+        validateHeaders: (headers) => headers,
+        validateBody: (body) => body,
+        handler: async ({ search }) => {
+          return {
+            status: 200,
+            body: {
+              user: {},
+            },
+          }
+        },
+      },
+      DELETE: {
+        operationId: 'deleteUser',
         validateSearch: (search) => search,
         validateHeaders: (headers) => headers,
         validateBody: (body) => body,
