@@ -140,28 +140,34 @@ export const api = defineResourceRouter({
 export type Api = typeof api
 
 // file: /anywhere.ts
-const users = resourceClient({
-  resource: 'users',
-  type: 'collection',
-  method: 'GET',
-  search: {
-    limit: 10,
-  },
-})
+const users = await resourceClient
+  .get('users')
+  .collection.method('GET')
+  .input({
+    search: {
+      limit: 10,
+    },
+  })
+  .fetch()
 
-const user = resourceClient({
-  resource: 'users',
-  type: 'item',
-  resourceId: '1',
-  method: 'GET',
-})
+const user = await resourceClient
+  .get('users')
+  .item.id('1')
+  .method('GET')
+  .input({
+    search: {
+      limit: 10,
+    },
+  })
+  .fetch()
 
-const createdUser = resourceClient({
-  resource: 'users',
-  type: 'collection',
-  method: 'POST',
-  body: {
-    name: 'John',
-  },
-})
+const createdUser = await resourceClient
+  .get('users')
+  .collection.method('POST')
+  .input({
+    body: {
+      name: 'John Doe',
+    },
+  })
+  .fetch()
 ```
